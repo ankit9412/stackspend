@@ -18,7 +18,24 @@ connectDB();
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, postman)
+    if (!origin) return callback(null, true);
+    
+    const allowed = [
+      process.env.FRONTEND_URL,
+      'http://localhost:5173'
+    ].filter(Boolean);
+    
+    // Allow standard URL and dynamic Vercel preview/git URLs
+    const isVercelOrigin = origin.startsWith('https://stackspend-fsp2') && origin.endsWith('.vercel.app');
+    
+    if (allowed.includes(origin) || isVercelOrigin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
